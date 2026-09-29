@@ -1,0 +1,42 @@
+import streamlit as st
+import pandas as pd
+import sqlite3
+
+st.title("📋 Gestión de Afiliados")
+
+def conectar_bd():
+    conn = sqlite3.connect("clientes_online.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS afiliados (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            telefono TEXT,
+            plan TEXT,
+            estado TEXT
+        )
+    """)
+    conn.commit()
+    return conn
+
+conn = conectar_bd()
+
+st.sidebar.header("Nuevo Afiliado")
+nombre = st.sidebar.text_input("Nombre completo")
+telefono = st.sidebar.text_input("Teléfono")
+plan = st.sidebar.text_input("Plan / Servicio")
+estado = st.sidebar.selectbox("Estado", ["Activo", "Inactivo", "Pendiente"])
+
+if st.sidebar.button("Guardar"):
+    if nombre:
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO afiliados (nombre, telefono, plan, estado) VALUES (?, ?, ?, ?)",
+                       (nombre, telefono, plan, estado))
+        conn.commit()
+        st.sidebar.success("¡Cliente guardado!")
+    else:
+        st.sidebar.error("El nombre es requerido.")
+
+# Mostrar tabla
+df = pd.read_sql_query("SELECT * FROM afiliados", conn)
+st.dataframe(df, use_container_width=True)
